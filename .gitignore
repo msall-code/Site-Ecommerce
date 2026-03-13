@@ -1,0 +1,15 @@
+# Backend
+boucherie-backend/target/
+boucherie-backend/.mvn/
+boucherie-backend/*.iml
+boucherie-backend/.idea/
+
+# Frontend
+boucherie-frontend/node_modules/
+boucherie-frontend/.env
+boucherie-frontend/dist/
+boucherie-frontend/build/
+
+# OS
+.DS_Store
+Thumbs.db
