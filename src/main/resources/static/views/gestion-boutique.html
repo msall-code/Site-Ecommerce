@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Ma Boutique 🏪</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/api-service.js" defer></script>
+    <script src="../js/auth.js" defer></script>
+    <script src="../js/shop.js" defer></script>
+</head>
+<body>
+
+    <script>
+        // Sécurité en attente du cycle de chargement
+        if (typeof globalThis.protectPage === 'function') {
+            globalThis.protectPage('vendeur');
+        }
+    </script>
+
+    <header>
+        <div class="header-brand">
+            <span style="font-size: 24px;">🏪</span>
+            <h2>Mon Espace Vendeur</h2>
+        </div>
+        <div class="header-actions">
+            <button onclick="globalThis.location.href='create-post.html'" class="btn-primary btn-secondary">
+                ➕ Ajouter un Produit
+            </button>
+            <button onclick="globalThis.logout()" class="btn-danger">Déconnexion</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="welcome-container">
+            <h1 class="welcome-title">Mes Articles en Vente</h1>
+            <p class="welcome-subtitle">Retrouvez ici vos articles mis en ligne ainsi que leurs QR Codes pour la prise en charge par les livreurs.</p>
+        </div>
+
+        <div id="product-list" class="products-grid">
+            <p class="loading-text">Chargement de vos articles...</p>
+        </div>
+    </main>
+
+    <script>
+        globalThis.onload = async () => {
+            await globalThis.loadMyProducts();
+        };
+    </script>
+</body>
+</html>

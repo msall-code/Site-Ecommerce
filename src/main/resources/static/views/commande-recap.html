@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>MaKet - Confirmation Commande</title>
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+</head>
+<body>
+
+    <header>
+        <h2>Finalisation de l'achat 💳</h2>
+    </header>
+
+    <div class="container" style="max-width: 500px; margin-top: 50px;">
+        <div class="card" style="padding: 30px;">
+            <h3 style="margin-top:0; text-align: center;">Récapitulatif de votre commande</h3>
+            <div id="order-summary" style="margin: 20px 0; padding: 15px; background: var(--bg); border-radius: 6px;">
+                Chargement de la commande...
+            </div>
+            
+            <button id="btn-confirm" class="btn-primary" style="width: 100%; background: #27ae60; padding: 12px;">
+                CONFIRMER ET PAYER
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentProductId = null;
+
+        globalThis.onload = async () => {
+            const urlParams = new URLSearchParams(globalThis.location.search);
+            currentProductId = urlParams.get('id');
+
+            if (!currentProductId) {
+                globalThis.location.href = 'blog-catalogue.html';
+                return;
+            }
+
+            try {
+                const product = await globalThis.ApiService.fetch(`/products/${currentProductId}`);
+                document.getElementById('order-summary').innerHTML = `
+                    <p><strong>Article :</strong> ${product.name}</p>
+                    <p><strong>Prix unitaire :</strong> ${product.price} FCFA</p>
+                    <hr style="border: 0; border-top: 1px solid #ddd;">
+                    <p style="font-size: 18px;"><strong>Total à payer :</strong> <span style="color:var(--primary); font-weight:bold;">${product.price} FCFA</span></p>
+                `;
+            } catch (err) {
+                // CORRECTION S2486
+                console.error("Erreur d'affichage du récapitulatif :", err);
+                document.getElementById('order-summary').innerHTML = `<p style="color:red;">Erreur lors du calcul.</p>`;
+            }
+        };
+
+        document.getElementById('btn-confirm').onclick = async () => {
+            try {
+                await globalThis.ApiService.post('/api/orders/confirm', { productId: currentProductId });
+                alert("Commande validée avec succès ! Un livreur va prendre en charge votre colis.");
+                globalThis.location.href = 'blog-catalogue.html';
+            } catch (err) {
+                // CORRECTION S2486
+                console.error("Erreur lors de la confirmation de la commande :", err);
+                alert("Erreur lors de la validation de la commande.");
+            }
+        };
+    </script>
+</body>
+</html>

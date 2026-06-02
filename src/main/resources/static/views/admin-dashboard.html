@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Administration 🛠️</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/admin.js"></script>
+</head>
+<body>
+
+    <script>
+        if (typeof globalThis.protectPage === 'function') {
+            globalThis.protectPage('admin');
+        }
+    </script>
+
+    <header>
+        <div class="header-brand">
+            <img src="../Maket.png" alt="MaKet Logo" class="logo-admin">
+            <h2>MaKet Admin Panel</h2>
+        </div>
+        <button onclick="globalThis.logout()" class="btn-danger">👋 Déconnexion</button>
+    </header>
+
+    <main class="container">
+        <div class="welcome-container">
+            <h1 class="welcome-title">Bonjour, Administrateur 👋</h1>
+            <p class="welcome-subtitle">Supervisez la taxonomie dynamique et les utilisateurs en temps réel.</p>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+            
+            <section class="card" style="grid-column: 1 / 2; height: fit-content;">
+                <h3 class="card-title">📂 Explorateur de Catégories</h3>
+                
+                <div id="category-breadcrumb" style="margin-bottom: 15px; padding: 10px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; line-height: 1.4;">
+                    </div>
+
+                <form id="category-form" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="newCatName" placeholder="Nom de l'élément à ajouter ici..." required class="form-control" style="flex: 1; margin:0;">
+                        <button type="submit" class="btn-primary" style="margin:0;">➕ Ajouter</button>
+                    </div>
+
+                    <div id="root-category-flags" style="display: flex; flex-wrap: wrap; gap: 10px; background: #fdf2f8; padding: 10px; border-radius: 6px; border: 1px dashed #f472b6; margin-top: 5px;">
+                        <p style="width: 100%; font-size: 11px; font-weight: bold; color: #be185d; margin: 0 0 5px 0;">🔧 CONFIGURATION DES CONTRAINTES DE CET ENSEMBLE :</p>
+                        <label style="font-size: 12px; display: flex; align-items: center; gap: 4px; color:#4c0519;"><input type="checkbox" id="flagGender"> 🚻 Cible Sexe</label>
+                        <label style="font-size: 12px; display: flex; align-items: center; gap: 4px; color:#4c0519;"><input type="checkbox" id="flagSizeText"> 📏 Tailles Vêtements</label>
+                        <label style="font-size: 12px; display: flex; align-items: center; gap: 4px; color:#4c0519;"><input type="checkbox" id="flagShoeSize"> 👟 Pointures</label>
+                        <label style="font-size: 12px; display: flex; align-items: center; gap: 4px; color:#4c0519;"><input type="checkbox" id="flagPrescription"> 📄 Ordonnance</label>
+                        <label style="font-size: 12px; display: flex; align-items: center; gap: 4px; color:#4c0519;"><input type="checkbox" id="flagFood"> 🛵 Livraison Repas</label>
+                    </div>
+                </form>
+
+                <ul id="category-list" class="scrollable-list" style="max-height: 400px; padding: 0; list-style: none;">
+                    <li class="loading-text">Chargement de l'arborescence...</li>
+                </ul>
+            </section>
+
+            <section class="card" style="grid-column: 2 / 3; border-top-color: var(--primary-light); height: fit-content;">
+                <h3 class="card-title">👥 Contrôle des Utilisateurs Keycloak</h3>
+                <div id="user-list" class="user-container" style="max-height: 540px; overflow-y: auto;">
+                    <p class="loading-text">Chargement des comptes utilisateurs...</p>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+
+    <script>
+        // Interception du formulaire d'ajout unifié
+        document.getElementById('category-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await globalThis.addCategory();
+        };
+
+        globalThis.onload = async () => {
+            await globalThis.loadCategoriesDashboard();
+            await globalThis.loadUsers();
+        };
+    </script>
+</body>
+</html>

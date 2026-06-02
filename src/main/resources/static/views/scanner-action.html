@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Livreur Panel 🏍️</title>
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" 
+            integrity="sha512-r6rDA7W6ZeQhvl8OH7CDgtKtsQI6FAH5vpHG95C3CxyGisXTIpsH4nK67I6vIgiZqWmWecT3w2fDYp6v864Djg==" 
+            crossorigin="anonymous" 
+            referrerpolicy="no-referrer"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/delivery.js"></script>
+</head>
+<body>
+
+    <script>
+        globalThis.protectPage('livreur');
+    </script>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">🏍️</span>
+            <h2 style="margin: 0; color: #3498db;">Espace Coursier / Livreur</h2>
+        </div>
+        <button onclick="globalThis.logout()" class="btn-danger">Déconnexion</button>
+    </header>
+
+    <div class="container" style="max-width: 600px;">
+        <h1 style="text-align: center;">Scanner un QR Code 📷</h1>
+        
+        <div class="card" style="text-align: center;">
+            <p>Scannez le QR Code fourni par le vendeur lors de la récupération du colis.</p>
+            
+            <div id="reader" style="width: 100%; max-width: 400px; margin: 0 auto; background: #eee; border-radius: 8px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialisation de la caméra via la librairie externe au chargement
+        globalThis.onload = () => {
+            const html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", { fps: 10, qrbox: 250 }
+            );
+            // On lie le succès au script global de delivery.js
+            html5QrcodeScanner.render(globalThis.onScanSuccess);
+        };
+    </script>
+</body>
+</html>

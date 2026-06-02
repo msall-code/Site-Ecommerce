@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Catalogue 🚀</title>
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/catalogue.js"></script>
+    <style>
+        .product-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; }
+        .price { font-size: 18px; font-weight: bold; color: var(--primary); margin: 5px 0; }
+        .seller { font-size: 12px; color: #777; }
+        .btn-detail { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2 style="margin: 0; color: var(--primary);">MaKet MarketPlace 🛍️</h2>
+        <button onclick="globalThis.logout()" class="btn-danger">Déconnexion</button>
+    </header>
+
+    <div class="container">
+        <h1 style="margin-bottom: 25px;">Articles Disponibles</h1>
+        
+        <div id="catalogue-grid" class="products-grid">
+            <p style="color: #666;">Chargement des articles...</p>
+        </div>
+    </div>
+
+    <script>
+        globalThis.onload = async () => {
+            await globalThis.loadCatalogue();
+        };
+    </script>
+</body>
+</html>

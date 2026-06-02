@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>MaKet - Détail Produit</title>
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+</head>
+<body>
+
+    <header>
+        <h2>Fiche Article 📋</h2>
+        <button onclick="globalThis.location.href='blog-catalogue.html'" class="btn-primary" style="background: #6c757d;">
+            Retour Catalogue
+        </button>
+    </header>
+
+    <div class="container" style="max-width: 600px; margin-top: 40px;">
+        <div class="card" id="detail-card" style="text-align: center; padding: 40px;">
+            <p>Chargement des détails de l'article...</p>
+        </div>
+    </div>
+
+    <script>
+        globalThis.onload = async () => {
+            const urlParams = new URLSearchParams(globalThis.location.search);
+            const productId = urlParams.get('id');
+
+            if (!productId) {
+                globalThis.location.href = 'blog-catalogue.html';
+                return;
+            }
+
+            try {
+                const product = await globalThis.ApiService.fetch(`/products/${productId}`);
+                document.getElementById('detail-card').innerHTML = `
+                    <h1 style="color: var(--primary);">${product.name}</h1>
+                    <h2 style="color: var(--secondary); margin: 20px 0;">${product.price} FCFA</h2>
+                    <p style="color: #555;">Vendu par : <strong>${product.storeName || 'Boutique MaKet'}</strong></p>
+                    <button onclick="globalThis.orderProduct(${product.id})" class="btn-primary" style="width: 100%; margin-top: 30px; padding: 15px;">
+                        🛍️ ACHETER CET ARTICLE
+                    </button>
+                `;
+            } catch (err) {
+                // CORRECTION S2486 : On loggue l'erreur pour ne pas l'étouffer
+                console.error("Erreur de récupération du produit :", err);
+                document.getElementById('detail-card').innerHTML = `<p style="color:red;">Impossible de trouver cet article.</p>`;
+            }
+        };
+
+        globalThis.orderProduct = (id) => {
+            globalThis.location.href = `commande-recap.html?id=${id}`;
+        };
+    </script>
+</body>
+</html>

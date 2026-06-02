@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: maket
+  datasource:
+    url: jdbc:postgresql://localhost:5435/maket_db
+    username: postgres
+    password: MonNouveauMotDePasse123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false # Évite les fuites de connexion mémoire
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # --- AJOUT CRUCIAL POUR ÉVITER L'ERREUR 500 ---
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+    default-property-inclusion: non_null # N'envoie pas les champs vides au frontend
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:7080/realms/maket-realm
+          jwk-set-uri: http://localhost:7080/realms/maket-realm/protocol/openid-connect/certs
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 8MB
+
+maket:
+  keycloak:
+    server-url: http://localhost:7080
+    realm: maket-realm
+    client-id: maket-backend
+    client-secret: 8v0bUsOjiabYi2ZqzxfoN1ubwLgciXmo
+    admin-cli:
+      username: admin
+      password: admin
+
+server:
+  port: 8099

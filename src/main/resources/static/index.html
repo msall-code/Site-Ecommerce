@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Achetez, Vendez, Livrez 🚀</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="Maket.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.4/dist/keycloak.min.js"></script>
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+
+    <div class="landing-wrapper">
+        <main class="landing-card-glass">
+            <div class="hero-brand-center">
+                <img src="Maket.png" alt="MaKet Logo">
+                <h2>MaKet</h2>
+            </div>
+            
+            <h1>Propulsez votre commerce avec <span>MaKet</span></h1>
+            <p>La plateforme tout-en-un pour acheter, vendre vos produits locaux et vous faire livrer en un temps record.</p>
+            
+            <div class="actions-center-container">
+                <button onclick="globalThis.location.href='login.html'" class="btn-primary">
+                    Se connecter
+                </button>
+                <button onclick="globalThis.location.href='subscribe.html'" class="btn-primary btn-outline">
+                    Créer un compte
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        globalThis.onload = async () => {
+            if (typeof Keycloak !== 'undefined') {
+                const auth = await globalThis.initAuth();
+                const token = localStorage.getItem('access_token');
+                if (auth || token) {
+                    globalThis.redirectByUserRole(token);
+                }
+            }
+        };
+    </script>
+</body>
+</html>

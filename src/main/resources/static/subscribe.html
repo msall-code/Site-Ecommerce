@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Inscription 🚀</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="Maket.png" type="image/png">
+    <script src="js/subscribe.js" defer></script>
+</head>
+<body>
+
+    <div class="welcome-bg subscribe-bg">
+        <div class="login-card subscribe-card">
+            <h2>Rejoindre MaKet 🚀</h2>
+            <form id="subscribe-form">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input type="text" id="username" required class="form-control" placeholder="ex: jean_dupont">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required class="form-control" placeholder="votre@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" required class="form-control" placeholder="••••••••">
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Je suis un :</label>
+                    <select id="role" class="form-control" onchange="globalThis.toggleFields()">
+                        <option value="client">Client</option>
+                        <option value="vendeur">Vendeur (Boutique)</option>
+                        <option value="livreur">Livreur (Coursier)</option>
+                    </select>
+                </div>
+
+                <div id="vendeur-fields" class="extra-fields">
+                    <div class="form-group">
+                        <label for="storeName">Nom de la Boutique</label>
+                        <input type="text" id="storeName" class="form-control" placeholder="Ma Super Boutique">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Adresse de la Boutique</label>
+                        <input type="text" id="address" class="form-control" placeholder="123 Rue du Marché">
+                    </div>
+                </div>
+
+                <div id="livreur-fields" class="extra-fields extra-fields-livreur">
+                    <div class="form-group">
+                        <label for="vehicle">Type de Véhicule</label>
+                        <input type="text" id="vehicle" placeholder="Moto, Vélo, Voiture..." class="form-control">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-submit">CRÉER MON COMPTE</button>
+                
+                <p class="footer-link">
+                    Déjà membre ? <a href="index.html">Se connecter</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('subscribe-form').onsubmit = async (e) => {
+            await globalThis.handleSubscription(e);
+        };
+    </script>
+</body>
+</html>

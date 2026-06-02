@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Connexion 🔐</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="Maket.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.4/dist/keycloak.min.js"></script>
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+
+    <div class="welcome-bg">
+        <div class="login-card login-card-custom">
+            <h2>Connexion 🔐</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Nom d'utilisateur" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Mot de passe" required class="form-control">
+                </div>
+                <button type="submit" class="btn-primary btn-full">SE CONNECTER</button>
+            </form>
+            <p><a href="subscribe.html">Pas encore de compte ? S'inscrire</a></p>
+        </div>
+    </div>
+
+    <script>
+        globalThis.onload = async () => {
+            await globalThis.initAuth();
+        };
+
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            await globalThis.login(username, password); 
+        };
+    </script>
+</body>
+</html>

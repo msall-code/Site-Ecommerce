@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaKet - Ajouter un article</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/api-service.js"></script>
+    <script src="../js/auth.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-brand"><h2>Nouveau produit 🚀</h2></div>
+        <button onclick="globalThis.location.href='gestion-boutique.html'" class="btn-primary btn-muted">Retour Boutique</button>
+    </header>
+
+    <div class="container" style="max-width: 600px; margin-top: 40px;">
+        <div class="card">
+            <h3 class="card-title">Détails de l'article</h3>
+            <form id="create-product-form">
+                <div class="form-group">
+                    <label>Nom du produit</label>
+                    <input type="text" id="p-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Prix (FCFA)</label>
+                    <input type="number" id="p-price" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select id="p-category" class="form-control" required onchange="globalThis.updateSubCategories()">
+                        <option value="">-- Choisir --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sous-catégorie</label>
+                    <select id="p-subcategory" class="form-control" onchange="globalThis.loadTaxonomyFields()">
+                        <option value="">-- Optionnel --</option>
+                    </select>
+                </div>
+
+                <div id="dynamic-fields" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none;">
+                    <h4 style="margin-top:0">Spécifications requises</h4>
+                    <div id="fields-container"></div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-submit" style="background: var(--secondary);">Mettre en vente</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allCategories = [];
+
+        globalThis.onload = async () => {
+            allCategories = await globalThis.ApiService.fetch('/api/admin/categories');
+            const catSelect = document.getElementById('p-category');
+            allCategories.filter(c => !c.parentId).forEach(cat => {
+                catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        };
+
+        globalThis.updateSubCategories = () => {
+            const parentId = document.getElementById('p-category').value;
+            const subSelect = document.getElementById('p-subcategory');
+            subSelect.innerHTML = '<option value="">-- Optionnel --</option>';
+            const subs = allCategories.filter(c => c.parentId == parentId);
+            subs.forEach(s => subSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            globalThis.loadTaxonomyFields();
+        };
+
+        globalThis.loadTaxonomyFields = () => {
+            const catId = document.getElementById('p-subcategory').value || document.getElementById('p-category').value;
+            const selectedCat = allCategories.find(c => c.id == catId);
+            const container = document.getElementById('fields-container');
+            const dynamicArea = document.getElementById('dynamic-fields');
+            
+            container.innerHTML = '';
+            if(!selectedCat) return;
+
+            let hasFields = false;
+            if(selectedCat.requiresGender) {
+                container.innerHTML += `<label>Genre</label><select id="p-gender" class="form-control"><option value="Homme">Homme</option><option value="Femme">Femme</option><option value="Unisexe">Unisexe</option></select>`;
+                hasFields = true;
+            }
+            if(selectedCat.requiresShoeSize) {
+                container.innerHTML += `<label>Pointure</label><input type="number" id="p-shoesize" class="form-control">`;
+                hasFields = true;
+            }
+            if(selectedCat.soldByWeight) {
+                container.innerHTML += `<label>Poids (kg)</label><input type="number" step="0.1" id="p-weight" class="form-control">`;
+                hasFields = true;
+            }
+
+            dynamicArea.style.display = hasFields ? 'block' : 'none';
+        };
+
+        document.getElementById('create-product-form').onsubmit = async (e) => {
+            e.preventDefault();
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const data = {
+                    name: document.getElementById('p-name').value,
+                    price: parseFloat(document.getElementById('p-price').value),
+                    categoryId: document.getElementById('p-category').value,
+                    subcategoryId: document.getElementById('p-subcategory').value || null,
+                    gender: document.getElementById('p-gender')?.value || null,
+                    shoeSize: document.getElementById('p-shoesize')?.value || null,
+                    weight: document.getElementById('p-weight')?.value || null,
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                };
+                await globalThis.ApiService.post('/api/products/add', data);
+                location.href = 'gestion-boutique.html';
+            });
+        };
+    </script>
+</body>
+</html>
