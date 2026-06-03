@@ -15,83 +15,48 @@ const loadUsersDashboard = async () => {
         const users = await globalThis.ApiService.fetch('/api/admin/users');
         if (!users) return;
 
-        // On masque les admins de la liste pour la gestion métier
         const filteredUsers = users.filter(u => !u.realmRoles?.includes('admin'));
 
         container.innerHTML = filteredUsers.map(u => {
-            // Détection du rôle actuel (SonarLint S6582 corrigé avec optional chaining)
             let currentRole = 'client'; 
-            const roles = u.realmRoles;
-            if (roles?.includes('vendeur')) currentRole = 'vendeur';
-            else if (roles?.includes('livreur')) currentRole = 'livreur';
+            const roles = u.realmRoles || [];
+            if (roles.includes('vendeur')) currentRole = 'vendeur';
+            else if (roles.includes('livreur')) currentRole = 'livreur';
 
             return `
             <div class="user-card" style="border:1px solid #e2e8f0; padding:12px; margin-bottom:8px; border-radius:10px; background:white;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; flex-direction:column;">
-                        <strong>👤 ${u.username || 'Sans nom'}</strong>
-                        <small style="color:gray;">${u.email || ''}</small>
-                    </div>
-                    <select onchange="globalThis.changeUserRole('${u.id}', this.value)" 
-                            style="font-size:12px; border:1px solid #cbd5e1; border-radius:6px; padding:4px;">
+                    <strong>👤 ${u.username || 'Sans nom'}</strong>
+                    <select onchange="globalThis.changeUserRole('${u.id}', this.value)" style="font-size:11px; border-radius:4px;">
                         <option value="client" ${currentRole === 'client' ? 'selected' : ''}>🛒 Client</option>
                         <option value="vendeur" ${currentRole === 'vendeur' ? 'selected' : ''}>🏬 Vendeur</option>
                         <option value="livreur" ${currentRole === 'livreur' ? 'selected' : ''}>📦 Livreur</option>
                     </select>
                 </div>
-                <div style="margin-top:12px; display:flex; gap:8px; border-top:1px solid #f1f5f9; padding-top:8px;">
+                <div style="margin-top:8px; display:flex; gap:5px;">
                     <button onclick="globalThis.toggleStatus('${u.id}', ${u.enabled})" class="btn-sm" 
-                            style="flex:1; background:${u.enabled ? '#f59e0b' : '#10b981'}; color:white; border:none; border-radius:6px; padding:6px; cursor:pointer;">
-                        ${u.enabled ? '🚫 Bloquer' : '✅ Activer'}
+                            style="background:${u.enabled ? '#f59e0b' : '#10b981'}; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">
+                        ${u.enabled ? 'Bloquer' : 'Activer'}
                     </button>
-                    <button onclick="globalThis.deleteUser('${u.id}')" class="btn-sm" 
-                            style="background:#fee2e2; color:#ef4444; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;">🗑️</button>
+                    <button onclick="globalThis.deleteUser('${u.id}')" class="btn-sm" style="background:#ef4444; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">🗑️</button>
                 </div>
             </div>
         `;}).join('');
     } catch (e) {
-        console.error("Erreur chargement utilisateurs :", e);
-    }
-};
-
-globalThis.changeUserRole = async (userId, newRole) => {
-    try {
-        await globalThis.ApiService.post(`/api/admin/users/${userId}/role`, { role: newRole });
-        loadUsersDashboard();
-    } catch (e) {
-        console.error("Erreur changement rôle :", e);
-    }
-};
-
-globalThis.toggleStatus = async (userId, currentStatus) => {
-    try {
-        await globalThis.ApiService.post(`/api/admin/users/${userId}/status`, { enabled: !currentStatus });
-        loadUsersDashboard();
-    } catch (e) {
-        console.error("Erreur changement statut :", e);
-    }
-};
-
-globalThis.deleteUser = async (userId) => {
-    if (!confirm("Supprimer cet utilisateur ?")) return;
-    try {
-        await globalThis.ApiService.delete(`/api/admin/users/${userId}`);
-        loadUsersDashboard();
-    } catch (e) {
-        console.error("Erreur suppression utilisateur :", e);
+        console.error("Erreur utilisateurs :", e);
     }
 };
 
 // ==========================================
-// 3. GESTION DES CATÉGORIES
+// 3. GESTION DES CATÉGORIES (EXPLORATEUR)
 // ==========================================
 
 const updateBreadcrumb = () => {
     const nav = document.getElementById('category-breadcrumb');
     if (!nav) return;
     nav.innerHTML = categoryNavigationStack.map((c, i) => 
-        `<span onclick="globalThis.navigateToBreadcrumb(${i})" style="cursor:pointer; color:var(--primary); text-decoration:underline;">${c.name}</span>`
-    ).join(' / ');
+        `<span onclick="globalThis.navigateToBreadcrumb(${i})" style="cursor:pointer; color:var(--primary); font-weight:bold; text-decoration:underline;">${c.name}</span>`
+    ).join(' <span style="color:#cbd5e1;">/</span> ');
 };
 
 const loadCategoriesDashboard = async () => {
@@ -100,18 +65,57 @@ const loadCategoriesDashboard = async () => {
     updateBreadcrumb();
     try {
         const current = categoryNavigationStack.at(-1);
-        const url = current?.id ? `/api/admin/categories?parentId=${current.id}` : '/api/admin/categories';
+        // Si current.id est null, on demande les racines, sinon on demande les enfants
+        const url = current.id ? `/api/admin/categories?parentId=${current.id}` : '/api/admin/categories';
         const categories = await globalThis.ApiService.fetch(url);
-        if (!categories) return;
+        
+        if (!categories || categories.length === 0) {
+            list.innerHTML = '<li style="padding:10px; color:gray; font-style:italic;">Dossier vide</li>';
+            return;
+        }
 
         list.innerHTML = categories.map(cat => `
-            <li class="admin-item" style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #f1f5f9;">
-                <span onclick="globalThis.selectCategory('${cat.id}', '${cat.name}')" style="cursor:pointer; font-weight:600;">📁 ${cat.name}</span>
-                <button onclick="globalThis.diveIntoCategory('${cat.id}', '${cat.name}')" class="btn-sm">Ouvrir</button>
+            <li class="admin-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9; ${selectedCategoryId == cat.id ? 'background:#eff6ff; border-left:4px solid #3b82f6;' : ''}">
+                <span onclick="globalThis.selectCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" style="cursor:pointer; flex:1; font-weight:600;">📁 ${cat.name}</span>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="globalThis.diveIntoCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" class="btn-sm" style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; padding:2px 8px;">Ouvrir</button>
+                    <button onclick="globalThis.deleteCategory('${cat.id}')" style="color:#ef4444; background:none; border:none; cursor:pointer; font-weight:bold;">✕</button>
+                </div>
             </li>
         `).join('');
     } catch (e) {
-        console.error("Erreur chargement catégories :", e);
+        console.error("Erreur explorateur catégories :", e);
+    }
+};
+
+globalThis.createCategory = async () => {
+    const nameInput = document.getElementById('new-category-name');
+    if (!nameInput?.value) return alert("Nom requis");
+
+    const currentParent = categoryNavigationStack.at(-1);
+    const payload = {
+        name: nameInput.value,
+        parentId: currentParent.id // null si on est à la racine
+    };
+
+    try {
+        await globalThis.ApiService.post('/api/admin/categories', payload);
+        nameInput.value = '';
+        loadCategoriesDashboard();
+    } catch (e) {
+        console.error("Erreur création catégorie :", e);
+    }
+};
+
+globalThis.deleteCategory = async (id) => {
+    if (!confirm("Supprimer cette catégorie et ses sous-éléments ?")) return;
+    try {
+        await globalThis.ApiService.delete(`/api/admin/categories/${id}`);
+        if (selectedCategoryId == id) selectedCategoryId = null;
+        loadCategoriesDashboard();
+    } catch (e) {
+        console.error("Erreur suppression catégorie :", e);
+        alert("Impossible de supprimer : vérifiez s'il y a des produits liés.");
     }
 };
 
@@ -122,6 +126,7 @@ globalThis.diveIntoCategory = (id, name) => {
 
 globalThis.navigateToBreadcrumb = (index) => {
     categoryNavigationStack = categoryNavigationStack.slice(0, index + 1);
+    selectedCategoryId = null;
     loadCategoriesDashboard();
 };
 
@@ -129,67 +134,80 @@ globalThis.selectCategory = (id, name) => {
     selectedCategoryId = id;
     const display = document.getElementById('active-cat-display');
     if(display) display.innerText = name;
+    loadCategoriesDashboard(); // Pour mettre à jour l'effet visuel (bordure bleue)
     loadGlobalLibrary();
 };
 
 // ==========================================
-// 4. BIBLIOTHÈQUE DE CONTRAINTES
+// 4. BIBLIOTHÈQUE DE MODÈLES (CONTRAINTES)
 // ==========================================
 
 globalThis.createGlobalConstraint = async () => {
-    const nameEl = document.getElementById('lib-const-name');
-    const typeEl = document.getElementById('lib-const-type');
-    if (!nameEl?.value) return alert("Nom requis");
+    const name = document.getElementById('lib-const-name');
+    const type = document.getElementById('lib-const-type');
+
+    if (!name?.value) return alert("Nom du modèle requis");
 
     try {
         await globalThis.ApiService.post('/api/admin/constraints', {
-            name: nameEl.value,
-            controlType: typeEl.value,
+            name: name.value,
+            controlType: type.value,
             required: false
         });
-        nameEl.value = '';
-        await loadGlobalLibrary(); 
+        name.value = '';
+        loadGlobalLibrary();
     } catch (e) {
-        console.error("Erreur création contrainte :", e);
+        console.error("Erreur création modèle :", e);
     }
 };
 
 const loadGlobalLibrary = async () => {
     const container = document.getElementById('global-constraints-library');
     if (!container) return;
-
     try {
         const allModels = await globalThis.ApiService.fetch('/api/admin/constraints');
-        if (!Array.isArray(allModels)) return;
+        if (!allModels) return;
 
         let activeIds = [];
         if (selectedCategoryId) {
-            try {
-                const current = await globalThis.ApiService.fetch(`/api/admin/categories/${selectedCategoryId}/constraints`);
-                activeIds = current ? current.map(c => c.id) : [];
-            } catch (err) {
-                console.error("Erreur lors du mappage des liaisons :", err);
-            }
+            const currentConstraints = await globalThis.ApiService.fetch(`/api/admin/categories/${selectedCategoryId}/constraints`);
+            activeIds = currentConstraints ? currentConstraints.map(c => String(c.id)) : [];
         }
 
         container.innerHTML = allModels.map(m => `
             <div class="library-item" style="display:flex; align-items:center; gap:10px; padding:8px; border:1px solid #e2e8f0; margin-bottom:5px; border-radius:6px; background:white;">
-                <input type="checkbox" ${activeIds.includes(m.id) ? 'checked' : ''} onchange="globalThis.toggleLink('${m.id}', this.checked)">
-                <span style="font-size:13px;">${m.name} <small>(${m.controlType})</small></span>
+                <input type="checkbox" ${activeIds.includes(String(m.id)) ? 'checked' : ''} onchange="globalThis.toggleLink('${m.id}', this.checked)">
+                <span style="font-size:13px;">${m.name} <small style="color:gray;">(${m.controlType})</small></span>
+                <button onclick="globalThis.deleteConstraint('${m.id}')" style="margin-left:auto; border:none; background:none; cursor:pointer; color:#94a3b8;">🗑️</button>
             </div>
-        `).join('');
+        `).join('') || '<p style="font-size:12px; color:gray;">Aucun modèle.</p>';
     } catch (e) {
-        console.error("Erreur bibliothèque graphique :", e);
+        console.error("Erreur bibliothèque :", e);
+    }
+};
+
+globalThis.deleteConstraint = async (id) => {
+    if(!confirm("Supprimer ce modèle de la bibliothèque ?")) return;
+    try {
+        await globalThis.ApiService.delete(`/api/admin/constraints/${id}`);
+        loadGlobalLibrary();
+    } catch (e) {
+        console.error("Erreur suppression modèle :", e);
     }
 };
 
 globalThis.toggleLink = async (constraintId, isChecked) => {
-    if(!selectedCategoryId) return alert("Sélectionnez une catégorie !");
+    if(!selectedCategoryId) {
+        alert("Cliquez sur le NOM d'une catégorie d'abord !");
+        loadGlobalLibrary();
+        return;
+    }
     const method = isChecked ? 'POST' : 'DELETE';
     try {
         await globalThis.ApiService.fetch(`/api/admin/categories/${selectedCategoryId}/constraints/${constraintId}`, { method });
     } catch (e) {
         console.error("Erreur de liaison :", e);
+        loadGlobalLibrary();
     }
 };
 

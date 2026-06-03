@@ -29,8 +29,8 @@
                 <h3 class="card-title">📂 Explorateur de Catégories</h3>
                 <div id="category-breadcrumb" class="breadcrumb-container"></div>
                 
-                <form onsubmit="event.preventDefault(); globalThis.addCategory();" style="display: flex; gap: 8px; margin-bottom: 15px;">
-                    <input type="text" id="newCatName" placeholder="Nom de catégorie..." class="form-control" required>
+                <form onsubmit="event.preventDefault(); globalThis.createCategory();" style="display: flex; gap: 8px; margin-bottom: 15px;">
+                    <input type="text" id="new-category-name" placeholder="Nom de catégorie..." class="form-control" required>
                     <button type="submit" class="btn-primary">➕</button>
                 </form>
 
