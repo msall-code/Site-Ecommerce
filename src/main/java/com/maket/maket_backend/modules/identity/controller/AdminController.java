@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/admin/contraints")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:8099") // Mis à jour pour correspondre à ton port actuel
 @PreAuthorize("hasRole('admin')") 
@@ -61,4 +61,5 @@ public class AdminController {
         keycloakAdminService.deleteUser(id);
         return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Utilisateur supprimé"));
     }
+    
 }

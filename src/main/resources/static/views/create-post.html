@@ -3,115 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MaKet - Ajouter un article</title>
+    <title>MaKet - Ajouter un Produit ➕</title>
     <link rel="stylesheet" href="../css/style.css">
-    <script src="../js/api-service.js"></script>
-    <script src="../js/auth.js"></script>
+    <script src="../js/api-service.js" defer></script>
+    <script src="../js/auth.js" defer></script>
+    <script src="../js/shop.js" defer></script>
 </head>
 <body>
     <header>
-        <div class="header-brand"><h2>Nouveau produit 🚀</h2></div>
-        <button onclick="globalThis.location.href='gestion-boutique.html'" class="btn-primary btn-muted">Retour Boutique</button>
-    </header>
+    <div class="header-brand">
+        <button type="button" 
+                onclick="globalThis.location.href='gestion-boutique.html'" 
+                style="background:none; border:none; font-size:24px; cursor:pointer;" 
+                aria-label="Retour à la boutique">
+            ⬅️
+        </button>
+        <h2>Nouvel Article</h2>
+    </div>
+</header>
 
-    <div class="container" style="max-width: 600px; margin-top: 40px;">
-        <div class="card">
-            <h3 class="card-title">Détails de l'article</h3>
-            <form id="create-product-form">
+<main class="container">
+    <section class="card" style="max-width: 600px; margin: 20px auto;">
+        <form id="product-form" onsubmit="globalThis.handleCreateProduct(event)">
+            
+            <div class="form-group">
+                <label for="p-name">Nom du produit</label>
+                <input type="text" id="p-name" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="p-desc">Description</label>
+                <textarea id="p-desc" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div class="form-group">
-                    <label>Nom du produit</label>
-                    <input type="text" id="p-name" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Prix (FCFA)</label>
+                    <label for="p-price">Prix (FCFA)</label>
                     <input type="number" id="p-price" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label>Catégorie</label>
-                    <select id="p-category" class="form-control" required onchange="globalThis.updateSubCategories()">
-                        <option value="">-- Choisir --</option>
-                    </select>
+                    <label for="p-stock">Stock disponible</label>
+                    <input type="number" id="p-stock" class="form-control" value="1" required>
                 </div>
-                <div class="form-group">
-                    <label>Sous-catégorie</label>
-                    <select id="p-subcategory" class="form-control" onchange="globalThis.loadTaxonomyFields()">
-                        <option value="">-- Optionnel --</option>
-                    </select>
-                </div>
+            </div>
 
-                <div id="dynamic-fields" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none;">
-                    <h4 style="margin-top:0">Spécifications requises</h4>
-                    <div id="fields-container"></div>
-                </div>
+            <div class="form-group">
+                <label for="p-category">Catégorie</label>
+                <select id="p-category" class="form-control" onchange="globalThis.onCategoryChange(this.value)" required>
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
 
-                <button type="submit" class="btn-primary btn-submit" style="background: var(--secondary);">Mettre en vente</button>
-            </form>
-        </div>
-    </div>
+            <div class="form-group">
+                <label for="p-image">Lien de l'image (URL)</label>
+                <input type="url" id="p-image" class="form-control">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 15px; font-size: 16px;">🚀 Mettre en vente</button>
+        </form>
+    </section>
+</main>
 
     <script>
-        let allCategories = [];
-
         globalThis.onload = async () => {
-            allCategories = await globalThis.ApiService.fetch('/api/admin/categories');
-            const catSelect = document.getElementById('p-category');
-            allCategories.filter(c => !c.parentId).forEach(cat => {
-                catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-            });
-        };
-
-        globalThis.updateSubCategories = () => {
-            const parentId = document.getElementById('p-category').value;
-            const subSelect = document.getElementById('p-subcategory');
-            subSelect.innerHTML = '<option value="">-- Optionnel --</option>';
-            const subs = allCategories.filter(c => c.parentId == parentId);
-            subs.forEach(s => subSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-            globalThis.loadTaxonomyFields();
-        };
-
-        globalThis.loadTaxonomyFields = () => {
-            const catId = document.getElementById('p-subcategory').value || document.getElementById('p-category').value;
-            const selectedCat = allCategories.find(c => c.id == catId);
-            const container = document.getElementById('fields-container');
-            const dynamicArea = document.getElementById('dynamic-fields');
-            
-            container.innerHTML = '';
-            if(!selectedCat) return;
-
-            let hasFields = false;
-            if(selectedCat.requiresGender) {
-                container.innerHTML += `<label>Genre</label><select id="p-gender" class="form-control"><option value="Homme">Homme</option><option value="Femme">Femme</option><option value="Unisexe">Unisexe</option></select>`;
-                hasFields = true;
+            if (typeof globalThis.loadCategoriesForForm === 'function') {
+                await globalThis.loadCategoriesForForm();
             }
-            if(selectedCat.requiresShoeSize) {
-                container.innerHTML += `<label>Pointure</label><input type="number" id="p-shoesize" class="form-control">`;
-                hasFields = true;
-            }
-            if(selectedCat.soldByWeight) {
-                container.innerHTML += `<label>Poids (kg)</label><input type="number" step="0.1" id="p-weight" class="form-control">`;
-                hasFields = true;
-            }
-
-            dynamicArea.style.display = hasFields ? 'block' : 'none';
-        };
-
-        document.getElementById('create-product-form').onsubmit = async (e) => {
-            e.preventDefault();
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const data = {
-                    name: document.getElementById('p-name').value,
-                    price: parseFloat(document.getElementById('p-price').value),
-                    categoryId: document.getElementById('p-category').value,
-                    subcategoryId: document.getElementById('p-subcategory').value || null,
-                    gender: document.getElementById('p-gender')?.value || null,
-                    shoeSize: document.getElementById('p-shoesize')?.value || null,
-                    weight: document.getElementById('p-weight')?.value || null,
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude
-                };
-                await globalThis.ApiService.post('/api/products/add', data);
-                location.href = 'gestion-boutique.html';
-            });
         };
     </script>
 </body>

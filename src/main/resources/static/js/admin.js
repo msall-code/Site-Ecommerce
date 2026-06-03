@@ -1,250 +1,152 @@
-// Historique de navigation pour l'explorateur (Pile / Stack)
-let categoryNavigationStack = [{ id: null, name: "Accueil (Catégories Mères)" }];
+// ==========================================
+// 1. ÉTATS ET VARIABLES GLOBALES
+// ==========================================
+let categoryNavigationStack = [{ id: null, name: "Accueil" }];
+let selectedCategoryId = null;
 
-function getCurrentPath() {
-    return categoryNavigationStack.at(-1);
-}
+// ==========================================
+// 2. DÉFINITION DES FONCTIONS
+// ==========================================
 
-async function loadCategoriesDashboard() {
-    const listContainer = document.getElementById('category-list');
-    const pathContainer = document.getElementById('category-breadcrumb');
-    const flagsSection = document.getElementById('root-category-flags');
-    
-    if (!listContainer) return;
+// Met à jour le fil d'Ariane (Breadcrumb)
+const updateBreadcrumb = () => {
+    const nav = document.getElementById('category-breadcrumb');
+    if (!nav) return;
+    nav.innerHTML = categoryNavigationStack.map((c, i) => 
+        `<span onclick="globalThis.navigateToBreadcrumb(${i})" style="cursor:pointer; color:var(--primary); font-weight:bold; text-decoration:underline;">${c.name}</span>`
+    ).join(' <span style="color:#cbd5e1;">/</span> ');
+};
 
-    const currentLevel = getCurrentPath();
-
-    if (pathContainer) {
-        pathContainer.innerHTML = categoryNavigationStack.map((node, index) => `
-            <span onclick="globalThis.navigateToBreadcrumb(${index})" style="color: #0284c7; cursor: pointer; font-weight: 600; font-size: 13px;">
-                ${node.name}
-            </span>
-        `).join(' <span style="color:#9ca3af; padding: 0 4px;">&gt;</span> ');
-    }
-
-    // CORRECTION : On affiche toujours la section des flags pour pouvoir spécialiser les sous-catégories
-    if (flagsSection) {
-        flagsSection.style.display = "flex"; 
-    }
-
-    try {
-        const url = currentLevel.id ? `/api/admin/categories?parentId=${currentLevel.id}` : '/api/admin/categories';
-        const categories = await globalThis.ApiService.fetch(url);
-        
-        if (!categories || categories.length === 0) {
-            listContainer.innerHTML = `<li style="padding:20px; text-align:center; color:#6b7280; list-style:none;">Aucun sous-ensemble trouvé dans cette section.</li>`;
-        } else {
-            listContainer.innerHTML = categories.map(cat => {
-                const indicators = [];
-                if (cat.requiresGender) indicators.push("🚻 Genre");
-                if (cat.requiresSizeText) indicators.push("📏 Tailles S-XL");
-                if (cat.requiresShoeSize) indicators.push("👟 Pointures");
-                if (cat.requiresPrescription) indicators.push("📄 Ordonnance Requise");
-                // On vérifie les deux noms possibles suite aux corrections DTO/Lombok
-                if (cat.isFoodDelivery || cat.foodDelivery) indicators.push("🛵 Restauration Rapide");
-                if (cat.requiresColdChain) indicators.push("❄️ Chaîne Froide");
-                if (cat.isAgeRestricted || cat.ageRestricted) indicators.push("🔞 +18 ans");
-                if (cat.isSoldByWeight || cat.soldByWeight) indicators.push("⚖️ Au poids");
-
-                const badgesHtml = indicators.map(i => `
-                    <span style="font-size:10px; background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#475569; font-weight:500;">${i}</span>
-                `).join('');
-
-                const badgeSpecs = indicators.length > 0 
-                    ? `<div style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">${badgesHtml}</div>`
-                    : '';
-
-                return `
-                    <li style="padding: 14px; border-bottom: 1px solid #f3f4f6; background: #ffffff; margin-bottom: 6px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <div>
-                            <strong style="font-size: 14px; color:#1f2937;">📁 ${cat.name}</strong>
-                            ${badgeSpecs}
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <button onclick="globalThis.diveIntoCategory('${cat.id}', '${cat.name}')" style="background: #e0f2fe; border: none; color: #0369a1; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight:600; cursor: pointer;">
-                                ⚙️ Gérer les sous-ensembles
-                            </button>
-                            <button onclick="globalThis.deleteCategory('${cat.id}')" style="background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 0 4px;">
-                                🗑️
-                            </button>
-                        </div>
-                    </li>
-                `;
-            }).join('');
-        }
-    } catch (error) {
-        console.error("Erreur catégories :", error);
-        listContainer.innerHTML = "<li style='color: var(--danger); padding: 10px;'>Erreur lors de la récupération.</li>";
-    }
-}
-
-function diveIntoCategory(id, name) {
-    categoryNavigationStack.push({ id: Number.parseInt(id, 10), name: name });
-    loadCategoriesDashboard();
-}
-
-function navigateToBreadcrumb(index) {
-    categoryNavigationStack = categoryNavigationStack.slice(0, index + 1);
-    loadCategoriesDashboard();
-}
-
-async function addCategory() {
-    const inputElement = document.getElementById('newCatName');
-    if (!inputElement?.value.trim()) return;
-
-    const currentLevel = getCurrentPath();
-    
-    // CORRECTION : On envoie les flags sélectionnés quel que soit le niveau (parentId)
-    const payload = {
-        name: inputElement.value.trim(),
-        parentId: currentLevel.id,
-        requiresGender: document.getElementById('flagGender').checked,
-        requiresSizeText: document.getElementById('flagSizeText').checked,
-        requiresShoeSize: document.getElementById('flagShoeSize').checked,
-        requiresPrescription: document.getElementById('flagPrescription').checked,
-        isFoodDelivery: document.getElementById('flagFood').checked
-    };
-
-    try {
-        await globalThis.ApiService.post('/api/admin/categories', payload);
-        inputElement.value = "";
-        
-        // Reset des checkboxes après l'ajout réussi
-        document.getElementById('flagGender').checked = false;
-        document.getElementById('flagSizeText').checked = false;
-        document.getElementById('flagShoeSize').checked = false;
-        document.getElementById('flagPrescription').checked = false;
-        document.getElementById('flagFood').checked = false;
-
-        await loadCategoriesDashboard();
-    } catch (error) {
-        console.error("Erreur lors de l'ajout :", error);
-        alert("Action impossible.");
-    }
-}
-
-// ... Le reste des fonctions (deleteCategory, loadUsers, etc.) reste identique ...
-
-async function deleteCategory(id) {
-    if (!confirm("Supprimer cet élément et ses sous-catégories ?")) return;
-    try {
-        await globalThis.ApiService.delete(`/api/admin/categories/${id}`);
-        await loadCategoriesDashboard();
-    } catch (error) {
-        console.error("Erreur suppression :", error);
-    }
-}
-
-async function loadUsers() {
-    const userContainer = document.getElementById('user-list');
-    if (!userContainer) return;
-
+// Charge la liste des utilisateurs
+const loadUsersDashboard = async () => {
+    const container = document.getElementById('user-list');
+    if (!container) return;
     try {
         const users = await globalThis.ApiService.fetch('/api/admin/users');
-        if (!users || users.length === 0) {
-            userContainer.innerHTML = "<p class='loading-text'>Aucun utilisateur inscrit.</p>";
-            return;
+        container.innerHTML = users.map(u => `
+            <div class="user-card" style="border:1px solid #e2e8f0; padding:12px; margin-bottom:8px; border-radius:10px; background:white;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>👤 ${u.username || 'Sans nom'}</strong>
+                    <span style="font-size:10px; color:var(--text-muted);">${u.role}</span>
+                </div>
+                <div style="margin-top:8px; display:flex; gap:5px;">
+                    <button onclick="globalThis.toggleStatus('${u.id}')" class="btn-sm" style="background:${u.active ? '#f59e0b' : '#10b981'}; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">
+                        ${u.active ? 'Bloquer' : 'Activer'}
+                    </button>
+                    <button onclick="globalThis.deleteUser('${u.id}')" class="btn-sm" style="background:#ef4444; color:white; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error("Erreur lors du chargement des utilisateurs :", e);
+    }
+};
+
+// Charge les catégories
+const loadCategoriesDashboard = async () => {
+    const list = document.getElementById('category-list');
+    if (!list) return;
+    updateBreadcrumb();
+    try {
+        const current = categoryNavigationStack.at(-1);
+        const url = current.id ? `/api/admin/categories?parentId=${current.id}` : '/api/admin/categories';
+        const categories = await globalThis.ApiService.fetch(url);
+        
+        list.innerHTML = categories.map(cat => `
+            <li class="admin-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9; ${selectedCategoryId == cat.id ? 'background:#eff6ff;' : ''}">
+                <span onclick="globalThis.selectCategory('${cat.id}', '${cat.name}')" style="cursor:pointer; flex:1; font-weight:600;">📁 ${cat.name}</span>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="globalThis.diveIntoCategory('${cat.id}', '${cat.name}')" style="font-size:10px; padding:2px 6px;">Ouvrir</button>
+                    <button onclick="globalThis.deleteCategory('${cat.id}')" style="color:red; background:none; border:none; cursor:pointer;">✕</button>
+                </div>
+            </li>
+        `).join('');
+    } catch (e) {
+        console.error("Erreur lors du chargement des catégories :", e);
+    }
+};
+
+// Charge la bibliothèque de contraintes
+const loadGlobalLibrary = async () => {
+    const container = document.getElementById('global-constraints-library');
+    if (!container) return;
+    try {
+        // NOTE: On utilise /api/admin/constraints (vérifie que ton GET Java est bien sur cette route)
+        const allModels = await globalThis.ApiService.fetch('/api/admin/constraints');
+        
+        let activeIds = [];
+        if (selectedCategoryId) {
+            const currentConstraints = await globalThis.ApiService.fetch(`/api/admin/categories/${selectedCategoryId}/constraints`);
+            activeIds = currentConstraints.map(c => c.id);
         }
 
-        userContainer.innerHTML = users.map(user => {
-            const activeRoles = user.realmRoles || [];
-            let userRole = 'client'; 
-            
-            if (activeRoles.includes('admin')) userRole = 'admin';
-            else if (activeRoles.includes('vendeur')) userRole = 'vendeur';
-            else if (activeRoles.includes('livreur')) userRole = 'livreur';
-
-            const roleColors = { 
-                admin: "var(--danger)", 
-                vendeur: "var(--secondary)", 
-                livreur: "#10b981", 
-                client: "var(--primary-light)" 
-            };
-            const roleBadgeColor = roleColors[userRole] || "#6b7280";
-
-            const isBlocked = user.enabled === false;
-            const statusLabel = isBlocked ? "🚫 Bloqué" : "✅ Actif";
-            const blockButtonText = isBlocked ? "🔓 Débloquer" : "🚫 Bloquer";
-            const isDisabledIfAdmin = userRole === 'admin' ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
-
-            return `
-                <div style="padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; border-left: 4px solid ${roleBadgeColor};">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong style="font-size: 14px;">${user.username} ${isBlocked ? '<span style="color:var(--danger); font-size:11px;">(Bloqué)</span>' : ''}</strong>
-                            <span style="font-size: 12px; color: var(--text-muted); display: block;">${user.email || 'Pas d\'email'}</span>
-                        </div>
-                        <div style="display:flex; gap: 5px; align-items: center;">
-                            <span style="font-size: 10px; padding: 2px 6px; background: #eee; border-radius: 4px;">${statusLabel}</span>
-                            <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; background: #f3f4f6; padding: 4px 8px; border-radius: 4px; color: ${roleBadgeColor};">
-                                ${userRole}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 8px; flex-wrap: wrap;">
-                        <select ${isDisabledIfAdmin} onchange="globalThis.changeUserRole('${user.id}', this.value)" style="font-size: 12px; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: white;">
-                            <option value="">Changer rôle...</option>
-                            <option value="client" ${userRole === 'client' ? 'selected' : ''}>Client</option>
-                            <option value="vendeur" ${userRole === 'vendeur' ? 'selected' : ''}>Vendeur</option>
-                            <option value="livreur" ${userRole === 'livreur' ? 'selected' : ''}>Livreur</option>
-                        </select>
-
-                        <button ${isDisabledIfAdmin} onclick="globalThis.toggleBlockUser('${user.id}', ${user.enabled})" style="background: none; border: none; color: #3b82f6; font-size: 12px; cursor: pointer; font-weight: 600;">
-                            ${blockButtonText}
-                        </button>
-
-                        <button ${isDisabledIfAdmin} onclick="globalThis.deleteUser('${user.id}')" style="background: none; border: none; color: var(--danger); font-size: 12px; cursor: pointer; font-weight: 600;">
-                            🗑️ Supprimer
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error("Erreur utilisateurs :", error);
+        container.innerHTML = allModels.map(m => `
+            <div class="library-item" style="display:flex; align-items:center; gap:10px; padding:8px; border:1px solid #e2e8f0; margin-bottom:5px; border-radius:6px; background:white;">
+                <input type="checkbox" ${activeIds.includes(m.id) ? 'checked' : ''} onchange="globalThis.toggleLink('${m.id}', this.checked)">
+                <span style="font-size:13px; color:#1e293b;">${m.name} <small>(${m.controlType})</small></span>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error("Erreur bibliothèque :", e);
     }
-}
+};
 
-async function toggleBlockUser(userId, currentEnabledStatus) {
-    const newState = !currentEnabledStatus;
-    const action = newState ? "débloquer" : "bloquer";
-    if (!confirm(`Confirmer : ${action} l'utilisateur ?`)) return;
+// Actions de navigation et liaison
+const diveIntoCategory = (id, name) => {
+    categoryNavigationStack.push({ id: Number(id), name: name });
+    loadCategoriesDashboard();
+};
+
+const navigateToBreadcrumb = (index) => {
+    categoryNavigationStack = categoryNavigationStack.slice(0, index + 1);
+    loadCategoriesDashboard();
+};
+
+const selectCategory = (id, name) => {
+    selectedCategoryId = id;
+    const display = document.getElementById('active-cat-display');
+    if(display) display.innerText = name;
+    loadCategoriesDashboard();
+    loadGlobalLibrary();
+};
+
+const toggleLink = async (constraintId, isChecked) => {
+    if(!selectedCategoryId) return alert("Sélectionnez une catégorie à gauche !");
+    const method = isChecked ? 'POST' : 'DELETE';
     try {
-        await globalThis.ApiService.post(`/api/admin/users/${userId}/status`, { enabled: newState });
-        await loadUsers();
-    } catch (error) { 
-        console.error("Erreur statut :", error);
+        await globalThis.ApiService.fetch(`/api/admin/categories/${selectedCategoryId}/constraints/${constraintId}`, { method });
+    } catch (e) {
+        console.error("Erreur de liaison :", e);
     }
-}
+};
 
-async function changeUserRole(userId, newRole) {
-    if (!newRole || !confirm(`Changer le rôle en ${newRole} ?`)) return;
-    try {
-        await globalThis.ApiService.post(`/api/admin/users/${userId}/role`, { role: newRole });
-        await loadUsers();
-    } catch (error) { 
-        console.error("Erreur modification rôle :", error);
-    }
-}
-
-async function deleteUser(userId) {
-    if (!confirm("Supprimer cet utilisateur ?")) return;
-    try {
-        await globalThis.ApiService.post(`/api/admin/users/${userId}/delete`, {});
-        await loadUsers();
-    } catch (error) { 
-        console.error("Erreur suppression utilisateur :", error);
-    }
-}
-
-// Exports globaux
+// ==========================================
+// 3. EXPORTATION DANS GLOBALTHIS
+// ==========================================
+// On attache TOUT pour que le HTML puisse voir les fonctions
+globalThis.updateBreadcrumb = updateBreadcrumb;
+globalThis.loadUsersDashboard = loadUsersDashboard;
 globalThis.loadCategoriesDashboard = loadCategoriesDashboard;
+globalThis.loadGlobalLibrary = loadGlobalLibrary;
 globalThis.diveIntoCategory = diveIntoCategory;
 globalThis.navigateToBreadcrumb = navigateToBreadcrumb;
-globalThis.addCategory = addCategory;
-globalThis.deleteCategory = deleteCategory;
-globalThis.loadUsers = loadUsers;
-globalThis.changeUserRole = changeUserRole;
-globalThis.toggleBlockUser = toggleBlockUser;
-globalThis.deleteUser = deleteUser;
+globalThis.selectCategory = selectCategory;
+globalThis.toggleLink = toggleLink;
+
+// Action utilisateur supplémentaire
+globalThis.toggleStatus = async (userId) => {
+    try {
+        await globalThis.ApiService.post(`/api/admin/users/${userId}/toggle-status`);
+        loadUsersDashboard();
+    } catch (e) { console.error(e); }
+};
+
+// ==========================================
+// 4. LANCEMENT AU CHARGEMENT
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Maintenant que tout est défini et exporté, on peut appeler
+    globalThis.loadCategoriesDashboard();
+    globalThis.loadUsersDashboard();
+    globalThis.loadGlobalLibrary();
+});
