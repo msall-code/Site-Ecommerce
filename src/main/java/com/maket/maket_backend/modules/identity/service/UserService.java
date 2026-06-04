@@ -1,13 +1,15 @@
 package com.maket.maket_backend.modules.identity.service;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.maket.maket_backend.modules.identity.dto.UserRegistrationDTO;
 import com.maket.maket_backend.modules.identity.dto.UserResponseDTO;
 import com.maket.maket_backend.modules.identity.dto.UserUpdateDTO;
 import com.maket.maket_backend.modules.identity.model.User;
 import com.maket.maket_backend.modules.identity.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,8 @@ public class UserService {
                     newUser.setEmail(dto.getEmail());
                     newUser.setFirstName(dto.getFirstName());
                     newUser.setLastName(dto.getLastName());
-                    newUser.setRole(dto.getRole());
+                    // Dans UserService.java, modifie la ligne 28 dans syncUserWithKeycloak :
+                    newUser.setRole(com.maket.maket_backend.modules.identity.model.Role.valueOf(dto.getRole().toUpperCase()));
                     return userRepository.save(newUser);
                 });
         return mapToResponseDTO(user);

@@ -3,51 +3,49 @@
 async function handleSubscription(event) {
     event.preventDefault();
 
-    // Récupération des éléments du DOM
+    // Récupération du rôle
     const roleSelect = document.getElementById('role');
-    const usernameInput = document.getElementById('username');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const storeNameInput = document.getElementById('storeName');
-    const addressInput = document.getElementById('address');
-    const vehicleInput = document.getElementById('vehicle');
-
-    const role = roleSelect ? roleSelect.value : 'client';
-    console.log("Rôle sélectionné pour l'inscription :", role);
-
-    // Construction du payload attendu par ton RegistrationController Spring Boot
+    const roleRaw = roleSelect?.value || 'client';
+    
+    // Construction de l'objet de données avec sécurités (?.value)
     const subscribeData = {
-        username: usernameInput ? usernameInput.value : '',
-        email: emailInput ? emailInput.value : '',
-        password: passwordInput ? passwordInput.value : '',
-        role: role,
-        storeName: role === 'vendeur' && storeNameInput ? storeNameInput.value : null,
-        address: role === 'vendeur' && addressInput ? addressInput.value : null,
-        vehicle: role === 'livreur' && vehicleInput ? vehicleInput.value : null
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        firstName: document.getElementById('firstName')?.value.trim() || "", 
+        lastName: document.getElementById('lastName')?.value.trim() || "",  
+        role: roleRaw.toUpperCase(), 
+        // On utilise l'optionnel chaining ?. pour éviter le crash si l'élément est absent
+        storeName: roleRaw === 'vendeur' ? (document.getElementById('storeName')?.value || null) : null,
+        address: roleRaw === 'vendeur' ? (document.getElementById('address')?.value || null) : null,
+        vehicle: roleRaw === 'livreur' ? (document.getElementById('vehicle')?.value || null) : null
     };
 
+    console.log("JSON envoyé au Backend :", subscribeData);
+
     try {
-        // Envoi vers ton API Spring Boot locale (port 8099)
         const response = await fetch('http://localhost:8099/api/auth/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(subscribeData)
         });
 
+        const responseText = await response.text();
+
         if (response.ok) {
-            alert("Compte créé avec succès ! Connectez-vous.");
-            globalThis.location.href = 'login.html'; // Redirection vers la page de connexion
+            alert("Compte créé avec succès !");
+            window.location.href = 'index.html'; 
         } else {
-            const errorText = await response.text();
-            alert("Erreur lors de l'inscription : " + errorText);
+            console.error("Détails de l'erreur Backend :", responseText);
+            alert("Erreur lors de l'inscription : " + responseText); 
         }
     } catch (error) {
-        console.error("Erreur d'inscription:", error);
-        alert("Impossible de joindre le serveur de l'API. Vérifie que Spring Boot est lancé.");
+        console.error("Erreur réseau :", error);
+        alert("Impossible de joindre le serveur. Vérifie ta connexion.");
     }
 }
 
-// Gestion de l'affichage dynamique des champs selon le rôle (Ajusté pour correspondre au HTML)
+// Gestion de l'affichage dynamique des champs selon le rôle
 function toggleFields() {
     const roleSelect = document.getElementById('role');
     const vendeurFields = document.getElementById('vendeur-fields');
@@ -64,6 +62,6 @@ function toggleFields() {
     }
 }
 
-// Exportation dans le scope global pour que le HTML puisse les déclencher
+// Exportation pour le HTML
 globalThis.handleSubscription = handleSubscription;
 globalThis.toggleFields = toggleFields;
